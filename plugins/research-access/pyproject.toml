@@ -1,0 +1,13 @@
+[project]
+name = "hermes-research-access"
+version = "0.1.0"
+requires-python = ">=3.11"
+dependencies = [
+    "defusedxml>=0.7.1",
+    "filelock>=3.32.5",
+    "pyyaml>=6.0.3",
+]
+
+[[tool.uv.index]]
+url = "https://pypi.org/simple"
+default = true

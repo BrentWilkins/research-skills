@@ -1,0 +1,14 @@
+{
+  "name": "hermes-research-browser",
+  "version": "1.0.0",
+  "description": "",
+  "scripts": {},
+  "type": "commonjs",
+  "private": true,
+  "dependencies": {
+    "agent-browser": "^0.26.0"
+  },
+  "allowScripts": {
+    "agent-browser@0.26.0": true
+  }
+}
