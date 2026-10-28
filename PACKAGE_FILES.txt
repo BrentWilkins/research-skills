@@ -8,6 +8,7 @@ scripts/build_package.py
 skills/deep-researcher/SKILL.md
 skills/deep-researcher/references/dossier-template.md
 skills/deep-researcher/references/run-management.md
+skills/deep-researcher/references/search-as-code.md
 skills/deep-researcher/references/worked-example.md
 skills/deep-researcher/scripts/audit_report.py
 skills/deep-researcher/scripts/evidence_ledger.py

@@ -30,9 +30,9 @@ variables. Read [run management](references/run-management.md) when initializing
 or archiving a run.
 
 Planning defaults (override to match the task and record the effective values):
-- Quick: 4 search calls, about 4–6 useful sources.
-- Standard: 8 search calls, about 8–15 useful sources.
-- Deep: 12 search calls, about 15–25 useful sources.
+- Quick: 4 search queries, about 4–6 useful sources.
+- Standard: 8 search queries, about 8–15 useful sources.
+- Deep: 12 search queries, about 15–25 useful sources.
 - Stop after four search/extraction/gap-analysis iterations by default. An explicit zero
   removes the iteration ceiling only; search, context, and storage budgets still apply.
 - Reserve at most two additional searches for a specific high-impact gap after extraction.
@@ -85,7 +85,11 @@ single-source exceptions. Deep mode also requires a counter-evidence search per 
 For a configured Hermes research-access installation, also load the companion
 `hermes-research-access` skill. The general workflow does not assume that plugin is installed.
 Native retrieval tools own extraction; do not bypass them with terminal Firecrawl calls,
-inline Python, or generated extraction scripts. Invoke the bundled bookkeeping scripts.
+raw HTTP requests, or generated scraping scripts. When Hermes exposes `execute_code`,
+calling native `hermes_tools.web_search` / `web_extract` from that tool is an optional
+batching path: see [batched native tools](references/search-as-code.md). Keep the same
+query, extraction, and stopping budgets. Otherwise use the native tools directly.
+Invoke the bundled bookkeeping scripts for ledger updates.
 
 ## Record evidence and checkpoint
 
@@ -96,8 +100,27 @@ python3 SKILL/scripts/evidence_ledger.py init RUN/evidence.json --topic "Topic" 
 ```
 
 After each extraction batch, add concise source records and atomic claims using
-`evidence_ledger.py add-source` and `add-claim`. See `--help` and the
-[worked example](references/worked-example.md) for paired passages and locators.
+`evidence_ledger.py add-source` and `add-claim`. Never hand-write new ledger records;
+the CLI assigns IDs. Use these signatures and the
+[worked example](references/worked-example.md) for paired passages and locators:
+
+```text
+evidence_ledger.py add-source LEDGER --url U --title T --source-type primary|secondary|commentary|community
+    --question Q1 [--summary S] [--published-date D] [--evidence '{"excerpt":"...","locator":"..."}' ...]
+    [--independence-group G --independence-note WHY] [--limitation L] [--extraction-status extracted|failed]
+evidence_ledger.py add-claim LEDGER --text T --question Q1 --status supported|disputed|single-source|unsupported
+    [--source 1,2] [--counter-source 3] [--evidence S1E1 ...] [--importance major|minor] [--caveat C] [--reasoning R]
+evidence_ledger.py check|brief LEDGER [--max-chars N]
+research_run.py checkpoint RUN [--status active|complete] [--artifact REL_PATH ...] [--completed X] [--gaps X]
+    [--clear-gaps] [--next-action X]
+audit_report.py REPORT --ledger LEDGER [--no-live]
+```
+
+`--question` accepts the exact full question text or an unambiguous leading ID
+(`Q1` for `Q1: Question`). Unknown or ambiguous questions are rejected before writing.
+The report audit expects inline numeric markers (`[1]`, `[2-3]`) and a final
+`## References`, `## Citation Links`, or `## Bibliography` section with numbered
+entries such as `1. [Title](https://url)` matching the ledger.
 
 - Use repeatable `--evidence '{"excerpt":"Exact short passage","locator":"Section/page/paragraph"}'`
   on sources. Locators may include a registered run-relative cache path and line numbers.
