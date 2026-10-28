@@ -54,3 +54,16 @@ may not shrink. Archives are not encrypted and do not replace a separate backup.
 The optional batched-native-tools guidance has not been exercised in a live model session
 by this port. It preserves existing query and extraction budgets; no runtime or research-quality
 improvement is claimed.
+
+## Hermes PR #105531 upstream port
+
+The question-ID and link-check regressions were reproduced before applying the fixes.
+The retained suite plus new regressions passes 25 tests on Linux / Python 3.14.
+The validator refactor preserves error and warning ordering: a development comparison
+matched 1,000 deterministic ledger fixtures and 108 report-audit cases, including
+mocked live-link outcomes. These comparisons use synthetic data, not live research.
+
+Hermes's pinned Ruff 0.15.22 reports ledger `validate` complexity 37 -> 2 and report
+`run` complexity 29 -> 3. Every function in the two files is at or below 12,
+below Hermes's limit of 20, with no complexity exceptions. The complexity refactor
+is a separate commit so Hermes can import it without the optional batching guidance.
