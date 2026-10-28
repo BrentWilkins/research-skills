@@ -101,6 +101,17 @@ def cmd_init(args: argparse.Namespace) -> None:
     print(f"Initialized {path} with {len(args.question)} research question(s).")
 
 
+def resolve_question(data: dict[str, Any], value: str) -> str:
+    """Accept full question text or an unambiguous leading ID such as Q1."""
+    questions = data.get("research_questions", [])
+    if value in questions:
+        return value
+    matches = [q for q in questions if q.split(":", 1)[0].strip() == value.strip()]
+    if len(matches) == 1:
+        return matches[0]
+    raise SystemExit(f"ERROR: unknown or ambiguous research question {value!r}; known: {questions}")
+
+
 def cmd_add_source(args: argparse.Namespace) -> None:
     path = Path(args.ledger).expanduser()
     data = read_ledger(path)
@@ -125,7 +136,7 @@ def cmd_add_source(args: argparse.Namespace) -> None:
         "independence_group": args.independence_group or None,
         "independence_assessed": bool(args.independence_group and args.independence_note),
         "independence_note": args.independence_note or "",
-        "questions": args.question,
+        "questions": [resolve_question(data, q) for q in args.question],
         "extraction_status": args.extraction_status,
         "summary": args.summary or "",
         "excerpts": args.excerpt,
@@ -178,7 +189,7 @@ def cmd_add_claim(args: argparse.Namespace) -> None:
     claim = {
         "id": f"C{claim_number:03d}",
         "text": args.text,
-        "question": args.question,
+        "question": resolve_question(data, args.question),
         "importance": args.importance,
         "status": args.status,
         "source_ids": parse_source_ids(args.source),

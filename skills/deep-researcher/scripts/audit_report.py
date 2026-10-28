@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import concurrent.futures
+import http.client
 import json
 import re
 import sys
@@ -155,7 +156,7 @@ def check_url(item: tuple[int, str], timeout: int) -> LinkResult:
                 number, url, "warning", f"HTTP {exc.code} (blocked or transient)"
             )
         return LinkResult(number, url, "warning", f"HTTP {exc.code}")
-    except Exception as exc:  # noqa: BLE001
+    except (OSError, ValueError, http.client.HTTPException) as exc:
         return LinkResult(number, url, "warning", f"unverified: {str(exc)[:100]}")
 
 

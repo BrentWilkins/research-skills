@@ -8,6 +8,8 @@ import tempfile
 import unittest
 import contextlib
 import io
+import http.client
+import urllib.error
 from unittest.mock import patch
 
 SCRIPTS = Path(__file__).resolve().parents[1] / "skills/deep-researcher/scripts"
@@ -22,6 +24,7 @@ def module(name):
 
 ledger = module("evidence_ledger")
 run = module("research_run")
+audit = module("audit_report")
 
 
 class ResearchTests(unittest.TestCase):
@@ -63,6 +66,49 @@ class ResearchTests(unittest.TestCase):
     def claim(self, *args):
         return self.cli("evidence_ledger.py", "add-claim", self.path, "--text", "Narrow claim",
                         "--question", "Q1", "--status", "supported", "--source", "1,2", *args)
+
+    def test_question_ids_resolve_to_full_text(self):
+        self.path = self.base / "evidence.json"
+        self.cli("evidence_ledger.py", "init", self.path, "--topic", "Fixture",
+                 "--question", "Q1: First question", "--question", "Q2: Second question")
+        self.add_source("https://example.com/a", "--question", "Q2: Second question")
+        self.cli("evidence_ledger.py", "add-claim", self.path, "--text", "Finding",
+                 "--question", "Q1", "--status", "single-source", "--source", "1")
+        data = ledger.read_ledger(self.path)
+        self.assertEqual(data["sources"][0]["questions"],
+                         ["Q1: First question", "Q2: Second question"])
+        self.assertEqual(data["claims"][0]["question"], "Q1: First question")
+        self.assertFalse(ledger.validate(data)[0])
+
+    def test_unknown_or_ambiguous_questions_leave_ledger_unchanged(self):
+        self.path = self.base / "evidence.json"
+        self.cli("evidence_ledger.py", "init", self.path, "--topic", "Fixture",
+                 "--question", "Q1: First question", "--question", "Q1: Other question")
+        before = self.path.read_bytes()
+        for question in ("Q9", "Q1"):
+            with self.subTest(question=question):
+                self.cli("evidence_ledger.py", "add-source", self.path,
+                         "--url", "https://example.com/a", "--title", "Fixture",
+                         "--source-type", "primary", "--question", question, success=False)
+                self.assertEqual(self.path.read_bytes(), before)
+                self.cli("evidence_ledger.py", "add-claim", self.path, "--text", "Finding",
+                         "--question", question, "--status", "unsupported", success=False)
+                self.assertEqual(self.path.read_bytes(), before)
+
+    def test_link_check_warns_for_expected_failures(self):
+        failures = (urllib.error.URLError("blocked"), TimeoutError("timed out"),
+                    ValueError("invalid URL"), http.client.BadStatusLine("bad status"))
+        for failure in failures:
+            with self.subTest(failure=type(failure).__name__):
+                with patch.object(audit.urllib.request, "urlopen", side_effect=failure):
+                    result = audit.check_url((1, "https://example.com/a"), 1)
+                self.assertEqual(result.severity, "warning")
+                self.assertIn("unverified:", result.message)
+
+    def test_link_check_does_not_hide_programming_errors(self):
+        with patch.object(audit.urllib.request, "urlopen", side_effect=TypeError("fixture bug")):
+            with self.assertRaisesRegex(TypeError, "fixture bug"):
+                audit.check_url((1, "https://example.com/a"), 1)
 
     def test_domains_are_not_independence(self):
         self.init_ledger()

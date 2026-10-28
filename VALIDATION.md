@@ -13,6 +13,8 @@ The unit tests use synthetic data and temporary directories. They make no networ
 - Evidence locations and claim links, including malformed, missing, and unrelated evidence.
 - Source independence: unassessed origins do not count as corroboration, and publications
   sharing one assessed origin count once.
+- Full question text and question-ID resolution; unknown or ambiguous questions cannot mutate the ledger.
+- Expected link-check failures remain warnings; unexpected programming errors propagate.
 - Explicit brief truncation without changing stored evidence.
 - Offline report citation checks.
 - Checkpoint preservation, storage warnings, and refusal to archive active or incomplete runs.
@@ -48,3 +50,7 @@ configuration, or deploy a search/Firecrawl service. They have been exercised on
 The storage budget is a warning for registered artifacts, not a hard disk quota or a policy
 for backend caches. Compression ratios depend on the input; already compressed documents
 may not shrink. Archives are not encrypted and do not replace a separate backup.
+
+The optional batched-native-tools guidance has not been exercised in a live model session
+by this port. It preserves existing query and extraction budgets; no runtime or research-quality
+improvement is claimed.
